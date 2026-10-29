@@ -1,0 +1,330 @@
+```html
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TimeGuard Manager - Quản Lý & Mô Phỏng Báo Thức Android</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        gh: {
+                            bg: '#0d1117',
+                            card: '#161b22',
+                            border: '#30363d',
+                            header: '#161b22',
+                            text: '#c9d1d9',
+                            muted: '#8b949e',
+                            blue: '#58a6ff',
+                            blueHover: '#1f6feb',
+                            green: '#238636',
+                            greenHover: '#2ea043',
+                            purple: '#bc8cff',
+                            red: '#f85149',
+                            gold: '#d29922'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0d1117;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #30363d;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #8b949e;
+        }
+
+        /* Syntax Highlighting */
+        .kw { color: #ff7b72; font-weight: 600; }
+        .cls { color: #ffa657; font-weight: 600; }
+        .str { color: #a5d6ff; }
+        .cmnt { color: #8b949e; font-style: italic; }
+        .fn { color: #d2a8ff; }
+        .num { color: #79c0ff; }
+        .anno { color: #d2a8ff; }
+        .tag { color: #7ee787; }
+        .attr { color: #79c0ff; }
+
+        /* Keyframes for Bell Pulse */
+        @keyframes ring-pulse {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            20%, 60% { transform: scale(1.1) rotate(-15deg); }
+            40%, 80% { transform: scale(1.1) rotate(15deg); }
+        }
+        .animate-ring {
+            animation: ring-pulse 0.8s infinite;
+        }
+    </style>
+</head>
+<body class="bg-gh-bg text-gh-text font-sans antialiased min-h-screen flex flex-col selection:bg-gh-blue/30">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-xs sm:max-w-sm w-full pointer-events-none"></div>
+
+    <!-- Header Chuẩn GitHub Theme -->
+    <header class="bg-gh-header border-b border-gh-border px-4 py-3 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <i class="fa-brands fa-github text-2xl text-white"></i>
+                <span class="font-bold text-white text-base sm:text-lg tracking-tight">TimeGuard Manager</span>
+                <span class="text-xs px-2 py-0.5 rounded-full border border-gh-green/40 text-gh-green bg-gh-green/10 font-mono hidden sm:inline-block">Tiếng Việt 100%</span>
+            </div>
+            
+            <div class="flex items-center gap-2 text-xs">
+                <span class="text-gh-muted hidden md:inline">Trạng thái Audio:</span>
+                <button id="audio-unlock-btn" onclick="unlockAudioContext()" class="bg-gh-card border border-gh-border hover:bg-gh-border text-gh-gold px-2.5 py-1 rounded flex items-center gap-1.5 transition-colors">
+                    <i class="fa-solid fa-volume-high text-xs"></i>
+                    <span id="audio-status-text">Bật Âm Thanh</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sub-header Điều Hướng Tab -->
+    <div class="bg-gh-header border-b border-gh-border px-4 pt-3 pb-0">
+        <div class="max-w-6xl mx-auto flex flex-wrap justify-between items-end gap-2">
+            <!-- Navigation Tabs -->
+            <nav class="flex space-x-2 sm:space-x-6 text-sm font-medium">
+                <button id="tab-btn-sim" onclick="switchTab('sim')" class="flex items-center gap-2 pb-3 border-b-2 border-gh-blue text-white font-semibold transition-all">
+                    <i class="fa-solid fa-stopwatch text-gh-blue"></i>
+                    <span>Mô Phỏng & Đặt Báo Thức</span>
+                </button>
+                <button id="tab-btn-code" onclick="switchTab('code')" class="flex items-center gap-2 pb-3 border-b-2 border-transparent text-gh-muted hover:text-gh-text transition-all">
+                    <i class="fa-solid fa-code text-gh-purple"></i>
+                    <span>Mã Nguồn GitHub</span>
+                    <span class="bg-gh-border text-[10px] px-1.5 py-0.2 rounded-full text-gh-text font-mono">4 file</span>
+                </button>
+            </nav>
+
+            <div class="pb-3 text-xs text-gh-muted font-mono hidden md:block">
+                Package: <span class="text-gh-purple">com.example.timeguard</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nội dung chính -->
+    <main class="max-w-6xl mx-auto w-full px-4 py-6 flex-grow">
+
+        <!-- ================= TAB 1: MÔ PHỎNG & ĐẶT BÁO THỨC ================= -->
+        <div id="tab-content-sim" class="space-y-6">
+
+            <!-- Card Trạng Thái SharedPreferences Trong Bộ Nhớ -->
+            <div class="bg-gh-card border border-gh-border rounded-xl p-4 shadow-lg">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 border-b border-gh-border/60 pb-3">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-database text-gh-purple"></i>
+                        <h2 class="font-bold text-white text-sm sm:text-base">Bộ Nhớ Hệ Thống (SharedPreferences Giả Lập)</h2>
+                    </div>
+                    <span class="text-[11px] font-mono bg-gh-bg border border-gh-border px-2 py-0.5 rounded text-gh-muted">
+                        File: "timeguard.xml"
+                    </span>
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono text-xs">
+                    <div class="bg-gh-bg p-3 rounded-lg border border-gh-border/80 flex flex-col justify-between">
+                        <span class="text-gh-muted text-[11px]">taskId (ID Nhiệm vụ chờ)</span>
+                        <span id="pref-task-id" class="text-gh-blue font-bold text-base mt-1">-2 (Chưa có)</span>
+                    </div>
+                    <div class="bg-gh-bg p-3 rounded-lg border border-gh-border/80 flex flex-col justify-between">
+                        <span class="text-gh-muted text-[11px]">completed (Trạng thái)</span>
+                        <span id="pref-completed" class="text-gh-red font-bold text-base mt-1">false</span>
+                    </div>
+                    <div class="bg-gh-bg p-3 rounded-lg border border-gh-border/80 flex flex-col justify-between">
+                        <span class="text-gh-muted text-[11px]">Đánh Giá Logic Receiver</span>
+                        <span id="pref-eval" class="text-gh-gold font-bold text-xs mt-1">SẴN SÀNG</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                <!-- Form Tạo Báo Thức Mới -->
+                <div class="bg-gh-card border border-gh-border rounded-xl p-5 shadow-lg flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center gap-2 mb-4">
+                            <div class="w-8 h-8 rounded-lg bg-gh-green/20 border border-gh-green/30 flex items-center justify-center text-gh-green">
+                                <i class="fa-solid fa-plus"></i>
+                            </div>
+                            <h3 class="font-bold text-white text-base">Đặt Lịch Báo Thức Mới</h3>
+                        </div>
+
+                        <form id="alarm-form" onsubmit="handleScheduleAlarm(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-gh-muted mb-1.5">Mã Nhiệm Vụ (Task ID)</label>
+                                <input type="number" id="task-id-input" required min="1" max="99999" value="101" 
+                                    class="w-full bg-gh-bg border border-gh-border rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-gh-blue transition-colors">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-gh-muted mb-1.5">Tên Tác Vụ / Ghi Chú Báo Thức</label>
+                                <input type="text" id="task-title-input" required placeholder="Nhắc nộp bài, tập thể dục..." 
+                                    class="w-full bg-gh-bg border border-gh-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gh-blue transition-colors">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-gh-muted mb-1.5">Thời Gian Hẹn Giờ (Giây)</label>
+                                <div class="flex gap-2">
+                                    <input type="number" id="task-seconds-input" min="3" max="3600" value="10" required 
+                                        class="w-full bg-gh-bg border border-gh-border rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-gh-blue transition-colors">
+                                    <div class="flex gap-1">
+                                        <button type="button" onclick="setQuickSeconds(5)" class="px-2.5 py-1 bg-gh-bg border border-gh-border hover:bg-gh-border rounded text-xs font-mono">5s</button>
+                                        <button type="button" onclick="setQuickSeconds(10)" class="px-2.5 py-1 bg-gh-bg border border-gh-border hover:bg-gh-border rounded text-xs font-mono">10s</button>
+                                        <button type="button" onclick="setQuickSeconds(30)" class="px-2.5 py-1 bg-gh-bg border border-gh-border hover:bg-gh-border rounded text-xs font-mono">30s</button>
+                                    </div>
+                                </div>
+                                <p class="text-[11px] text-gh-muted mt-1.5">Sau số giây này, hệ thống sẽ tự động gọi <span class="text-gh-purple font-mono">AlarmReceiver</span>.</p>
+                            </div>
+
+                            <button type="submit" class="w-full bg-gh-green hover:bg-gh-greenHover text-white font-semibold py-2.5 px-4 rounded-lg text-sm transition-all shadow-md flex items-center justify-center gap-2 active:scale-95">
+                                <i class="fa-regular fa-bell"></i>
+                                <span>Tạo & Đặt Báo Thức</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="mt-6 pt-4 border-t border-gh-border/60 text-xs text-gh-muted">
+                        <i class="fa-solid fa-circle-info text-gh-blue mr-1"></i>
+                        <span>Thao tác này sẽ lưu thông tin vào SharedPreferences và kích hoạt AlarmManager giả lập.</span>
+                    </div>
+                </div>
+
+                <!-- Bảng Danh Sách Báo Thức Đang Chạy -->
+                <div class="lg:col-span-2 bg-gh-card border border-gh-border rounded-xl overflow-hidden shadow-lg flex flex-col justify-between">
+                    <div>
+                        <div class="bg-gh-bg/60 px-4 py-3 border-b border-gh-border flex items-center justify-between flex-wrap gap-2">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-list-check text-gh-blue"></i>
+                                <h3 class="font-bold text-white text-sm sm:text-base">Danh Sách Tác Vụ & Báo Thức</h3>
+                            </div>
+                            <button onclick="clearAllTasks()" class="text-xs text-gh-red hover:underline flex items-center gap-1">
+                                <i class="fa-solid fa-trash-can"></i> Xóa Tất Cả
+                            </button>
+                        </div>
+
+                        <div class="p-4 overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead>
+                                    <tr class="border-b border-gh-border text-gh-muted font-mono uppercase">
+                                        <th class="pb-2.5 pl-2">Task ID</th>
+                                        <th class="pb-2.5">Tên Tác Vụ</th>
+                                        <th class="pb-2.5">Đếm Ngược</th>
+                                        <th class="pb-2.5">Trạng Thái</th>
+                                        <th class="pb-2.5 pr-2 text-right">Thao Tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="task-table-body" class="divide-y divide-gh-border/60">
+                                    <!-- Dynamic Rows -->
+                                </tbody>
+                            </table>
+
+                            <div id="no-tasks-view" class="text-center py-10 text-gh-muted space-y-2">
+                                <i class="fa-regular fa-clock text-3xl opacity-40"></i>
+                                <p class="text-sm">Chưa có báo thức nào được đặt.</p>
+                                <p class="text-xs text-gh-muted">Hãy điền form bên cạnh để tạo báo thức thử nghiệm!</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-4 bg-gh-bg/30 border-t border-gh-border/60 text-xs flex items-center justify-between flex-wrap gap-2">
+                        <span class="text-gh-muted">
+                            Lưu ý: Nếu đánh dấu <strong class="text-gh-green">Hoàn thành</strong>, khi hết giờ Receiver sẽ tự động hủy báo thức.
+                        </span>
+                        <button onclick="triggerImmediateAlarmTest()" class="bg-gh-blue/20 hover:bg-gh-blue/30 text-gh-blue border border-gh-blue/40 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all">
+                            <i class="fa-solid fa-bolt mr-1"></i> Thử Báo Thức Ngay
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Nhật Ký Hệ Thống Logcat -->
+            <div class="bg-gh-card border border-gh-border rounded-xl p-4 shadow-lg">
+                <div class="flex items-center justify-between mb-3 border-b border-gh-border/60 pb-2">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-terminal text-gh-green"></i>
+                        <h3 class="font-bold text-white text-sm">Nhật Ký Android Logcat (Broadcast Events)</h3>
+                    </div>
+                    <button onclick="clearLogcat()" class="text-xs text-gh-muted hover:text-gh-text px-2 py-1 bg-gh-bg border border-gh-border rounded">
+                        Xóa Log
+                    </button>
+                </div>
+                <div id="logcat-box" class="bg-[#090d11] rounded-lg p-3 font-mono text-[11px] h-44 overflow-y-auto space-y-1.5 text-gh-text border border-gh-border/80">
+                    <!-- Dynamic Log lines -->
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ================= TAB 2: MÃ NGUỒN GITHUB ================= -->
+        <div id="tab-content-code" class="hidden space-y-6">
+
+            <!-- Thanh chọn file mã nguồn -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                
+                <!-- Sidebar chọn file -->
+                <div class="bg-gh-card border border-gh-border rounded-xl p-3 space-y-1">
+                    <div class="px-3 py-2 text-xs font-bold text-gh-muted uppercase font-mono tracking-wider">Tập Tin Android</div>
+                    
+                    <button id="file-tab-receiver" onclick="loadSourceCode('receiver')" class="w-full text-left px-3 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-between bg-gh-blue/15 text-gh-blue border border-gh-blue/30 transition-all">
+                        <span class="flex items-center gap-2">
+                            <i class="fa-brands fa-java text-amber-500"></i> AlarmReceiver.java
+                        </span>
+                        <span class="text-[10px] bg-gh-blue/20 text-gh-blue px-1.5 py-0.5 rounded font-mono">Chính</span>
+                    </button>
+
+                    <button id="file-tab-service" onclick="loadSourceCode('service')" class="w-full text-left px-3 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-between text-gh-text hover:bg-gh-border/40 transition-all">
+                        <span class="flex items-center gap-2">
+                            <i class="fa-brands fa-java text-amber-500"></i> AlarmService.java
+                        </span>
+                    </button>
+
+                    <button id="file-tab-main" onclick="loadSourceCode('main')" class="w-full text-left px-3 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-between text-gh-text hover:bg-gh-border/40 transition-all">
+                        <span class="flex items-center gap-2">
+                            <i class="fa-brands fa-java text-amber-500"></i> MainActivity.java
+                        </span>
+                    </button>
+
+                    <button id="file-tab-manifest" onclick="loadSourceCode('manifest')" class="w-full text-left px-3 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-between text-gh-text hover:bg-gh-border/40 transition-all">
+                        <span class="flex items-center gap-2">
+                            <i class="fa-solid fa-code text-gh-gold"></i> AndroidManifest.xml
+                        </span>
+                    </button>
+                </div>
+
+                <!-- Vùng hiển thị code -->
+                <div class="md:col-span-3 bg-gh-card border border-gh-border rounded-xl overflow-hidden flex flex-col shadow-lg">
+                    <div class="bg-gh-bg/80 px-4 py-3 border-b border-gh-border flex items-center justify-between text-xs">
+                        <div class="flex items-center gap-2 font-mono">
+                            <i id="code-file-icon" class="fa-brands fa-java text-amber-500 text-sm"></i>
+                            <span id="code-file-title" class="font-bold text-white">AlarmReceiver.java</span>
+                            <span class="text-gh-muted">|</span>
+                            <span id="code-file-desc" class="text-gh-muted">Kiểm tra SharedPreferences & khởi chạy Service</span>
+                        </div>
+                        <button onclick="copyCodeSnippet()" class="bg-gh-card border border-gh-border hover:bg-gh-border text-gh-text px-3 py-1 rounded-md flex items-center gap-1.5 transiti
